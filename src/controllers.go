@@ -12,13 +12,16 @@ import (
 func registerControllers(router *gin.Engine) {
 	router.POST("/api/admission", handleAdmission)
 	router.POST("/api/stream")
-	router.POST("/api/stream/:app:/:stream:/token")
+	//router.POST("/api/stream/:app:/:stream:/token")
 }
 
 func handleAdmission(context *gin.Context) {
 	admissionReq := OMEAdmissionBody{}
 	bodyBytes, _ := ioutil.ReadAll(context.Request.Body)
-
+	if !validateHMACRequest(context.Request, bodyBytes) {
+		context.Status(http.StatusUnauthorized)
+		return
+	}
 	json.Unmarshal(bodyBytes, &admissionReq)
 	reqUrl, _ := url.Parse(admissionReq.Request.URL)
 	log.Println(admissionReq)
