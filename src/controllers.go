@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/MrGameCube/ome-token-admission/token-admission"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"ts-stream/token-admission"
 )
 
 func registerControllers(router *gin.Engine) {

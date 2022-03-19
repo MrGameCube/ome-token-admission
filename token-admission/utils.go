@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-// ValidateHMACRequest conforms to the OME specification: https://airensoft.gitbook.io/ovenmediaengine/access-control/admission-webhooks#security
+// ValidateHMACRequest conforms to the OMV: https://airensoft.gitbook.io/ovenmediaengine/access-control/admission-webhooks#security
 func ValidateHMACRequest(req *http.Request, bodyBytes []byte) bool {
 
 	hmacData, err := base64.RawURLEncoding.DecodeString(req.Header.Get("X-OME-Signature"))

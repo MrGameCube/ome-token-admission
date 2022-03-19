@@ -1,8 +1,6 @@
 package token_admission
 
-import (
-	"time"
-)
+import "time"
 
 type OMEAdmissionRequest struct {
 	Direction string
