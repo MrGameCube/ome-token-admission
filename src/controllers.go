@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"ts-stream/token-admission"
 )
 
 func registerControllers(router *gin.Engine) {
@@ -16,9 +17,9 @@ func registerControllers(router *gin.Engine) {
 }
 
 func handleAdmission(context *gin.Context) {
-	admissionReq := OMEAdmissionBody{}
+	admissionReq := token_admission.OMEAdmissionBody{}
 	bodyBytes, _ := ioutil.ReadAll(context.Request.Body)
-	if !validateHMACRequest(context.Request, bodyBytes) {
+	if !token_admission.ValidateHMACRequest(context.Request, bodyBytes) {
 		context.Status(http.StatusUnauthorized)
 		return
 	}
@@ -26,7 +27,7 @@ func handleAdmission(context *gin.Context) {
 	reqUrl, _ := url.Parse(admissionReq.Request.URL)
 	log.Println(admissionReq)
 	log.Println("Token: ", reqUrl.Query().Get("token"))
-	context.JSON(http.StatusOK, OMEAdmissionResponse{
+	context.JSON(http.StatusOK, token_admission.OMEAdmissionResponse{
 		Allowed: true,
 	})
 }
