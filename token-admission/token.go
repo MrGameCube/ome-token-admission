@@ -1,6 +1,11 @@
-package token
+package token_admission
 
 import "time"
+
+const (
+	DirectionOutgoing = "outgoing"
+	DirectionIncoming = "incoming"
+)
 
 type TokenRequest struct {
 	TokenOptions TokenEntity

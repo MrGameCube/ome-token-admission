@@ -1,4 +1,4 @@
-package stream
+package token_admission
 
 import "time"
 

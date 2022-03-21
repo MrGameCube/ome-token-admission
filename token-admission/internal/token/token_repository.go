@@ -2,7 +2,13 @@ package token
 
 import (
 	"database/sql"
+	"errors"
+	"github.com/MrGameCube/ome-token-admission/token-admission"
 	"time"
+)
+
+var (
+	ErrNotFound = errors.New("No entry found")
 )
 
 type SQLiteRepository struct {
@@ -28,7 +34,7 @@ func (r *SQLiteRepository) Migrate() error {
 	return err
 }
 
-func (r *SQLiteRepository) Create(token TokenEntity) (*TokenEntity, error) {
+func (r *SQLiteRepository) Create(token token_admission.TokenEntity) (*token_admission.TokenEntity, error) {
 	query := `INSERT INTO tokens (token, app_name, stream_name, direction, expires_at) VALUES(?,?,?,?,?)`
 	res, err := r.db.Exec(query, token.Token, token.Application, token.Stream, token.Direction, token.ExpiresAt)
 	if err != nil {
@@ -42,15 +48,15 @@ func (r *SQLiteRepository) Create(token TokenEntity) (*TokenEntity, error) {
 	return &token, nil
 }
 
-func (r *SQLiteRepository) All() ([]TokenEntity, error) {
+func (r *SQLiteRepository) All() ([]token_admission.TokenEntity, error) {
 	res, err := r.db.Query("SELECT * FROM tokens WHERE expired_at < datetime()")
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close()
-	var all []TokenEntity
+	var all []token_admission.TokenEntity
 	for res.Next() {
-		var token TokenEntity
+		var token token_admission.TokenEntity
 		var dbDate string
 		if err := res.Scan(&token.ID,
 			&token.Token,
@@ -70,17 +76,17 @@ func (r *SQLiteRepository) All() ([]TokenEntity, error) {
 	}
 	return all, nil
 }
-func (r *SQLiteRepository) FindByToken(token string) (*TokenEntity, error) {
+func (r *SQLiteRepository) FindByToken(token string) (*token_admission.TokenEntity, error) {
 	res, err := r.db.Query("SELECT * FROM tokens WHERE token=? and expires_at < datetime()", token)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close()
 	if !res.Next() {
-		return nil, nil
+		return nil, ErrNotFound
 	}
 
-	var tokenEnt *TokenEntity
+	var tokenEnt *token_admission.TokenEntity
 	var dbISODate string
 	err = res.Scan(&tokenEnt.ID, &tokenEnt.Token, &tokenEnt.Application, &tokenEnt.Stream, &tokenEnt.Direction, &dbISODate)
 	if err != nil {

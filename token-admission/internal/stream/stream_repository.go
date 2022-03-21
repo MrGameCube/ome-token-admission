@@ -2,6 +2,7 @@ package stream
 
 import (
 	"database/sql"
+	"github.com/MrGameCube/ome-token-admission/token-admission"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func (r *SQLiteRepository) Migrate() error {
 	_, err := r.db.Exec(query)
 	return err
 }
-func (r *SQLiteRepository) Create(stream StreamEntity) (*StreamEntity, error) {
+func (r *SQLiteRepository) Create(stream token_admission.StreamEntity) (*token_admission.StreamEntity, error) {
 	query := `INSERT INTO streams (name, app_name, owner_name, owner_id, public, creation_date) VALUES(?,?,?,?,?,?)`
 	res, err := r.db.Exec(query, stream.StreamName, stream.ApplicationName, stream.OwnerName, stream.OwnerID, stream.Public, stream.CreationDate.Format(time.RFC3339))
 	if err != nil {
@@ -40,15 +41,15 @@ func (r *SQLiteRepository) Create(stream StreamEntity) (*StreamEntity, error) {
 	stream.ID = id
 	return &stream, nil
 }
-func (r *SQLiteRepository) All() ([]StreamEntity, error) {
+func (r *SQLiteRepository) All() ([]token_admission.StreamEntity, error) {
 	res, err := r.db.Query("SELECT * FROM streams")
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close()
-	var all []StreamEntity
+	var all []token_admission.StreamEntity
 	for res.Next() {
-		var stream StreamEntity
+		var stream token_admission.StreamEntity
 		var dbISODate string
 		if err := res.Scan(&stream.ID,
 			&stream.StreamName,
@@ -69,14 +70,14 @@ func (r *SQLiteRepository) All() ([]StreamEntity, error) {
 	}
 	return all, nil
 }
-func (r *SQLiteRepository) FindByName(streamName string, appName string) (*StreamEntity, error) {
+func (r *SQLiteRepository) FindByName(streamName string, appName string) (*token_admission.StreamEntity, error) {
 	res, err := r.db.Query("SELECT * FROM streams WHERE name=? and app_name=?", streamName, appName)
 	if !res.Next() || err != nil {
 		return nil, err
 	}
 	defer res.Close()
 
-	var streamInfo *StreamEntity
+	var streamInfo *token_admission.StreamEntity
 	var dbISODate string
 	err = res.Scan(&streamInfo.ID, &streamInfo.StreamName, &streamInfo.ApplicationName, &streamInfo.OwnerName, &streamInfo.OwnerID, &streamInfo.Public, &dbISODate)
 	if err != nil {

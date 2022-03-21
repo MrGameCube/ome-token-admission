@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	token_admission "github.com/MrGameCube/ome-token-admission/token-admission"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -12,8 +13,10 @@ import (
 	"time"
 )
 
-func main() {
+var tokenAdmission *token_admission.TokenAdmission
 
+func main() {
+	tokenAdmission = token_admission.New(nil)
 	router := initializeGin()
 	server := initializeHTTPServer(router)
 	waitForShutdown(server)
@@ -22,7 +25,6 @@ func main() {
 }
 
 func initializeGin() *gin.Engine {
-
 	router := gin.Default()
 	router.LoadHTMLFiles("web/public/index.html")
 	router.Static("/static", "./web/public/static")

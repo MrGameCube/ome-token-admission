@@ -1,13 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/MrGameCube/ome-token-admission/token-admission"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"net/url"
 )
 
 func registerControllers(router *gin.Engine) {
@@ -17,17 +13,22 @@ func registerControllers(router *gin.Engine) {
 }
 
 func handleAdmission(context *gin.Context) {
-	admissionReq := token_admission.OMEAdmissionBody{}
-	bodyBytes, _ := ioutil.ReadAll(context.Request.Body)
-	if !token_admission.ValidateHMACRequest(context.Request, bodyBytes) {
+	resp, err := tokenAdmission.HandleAdmissionRequest(context.Request)
+
+	if err == token_admission.ErrInvalidSignature {
 		context.Status(http.StatusUnauthorized)
 		return
 	}
-	json.Unmarshal(bodyBytes, &admissionReq)
-	reqUrl, _ := url.Parse(admissionReq.Request.URL)
-	log.Println(admissionReq)
-	log.Println("Token: ", reqUrl.Query().Get("token"))
-	context.JSON(http.StatusOK, token_admission.OMEAdmissionResponse{
-		Allowed: true,
-	})
+
+	if err == token_admission.ErrTokenMissing {
+		context.Status(http.StatusBadRequest)
+		return
+	}
+
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		return
+	}
+
+	context.JSON(http.StatusOK, resp)
 }
