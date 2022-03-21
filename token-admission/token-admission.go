@@ -8,12 +8,10 @@ import (
 	"github.com/MrGameCube/ome-token-admission/token-admission/internal/token"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strings"
 )
 
 var (
-	ErrInvalidSignature = errors.New("hmac signature invalid!")
+	ErrInvalidSignature = errors.New("hmac signature invalid")
 	ErrTokenMissing     = errors.New("token missing")
 )
 
@@ -51,18 +49,23 @@ func (tA *TokenAdmission) HandleAdmissionRequest(request *http.Request) (*OMEAdm
 		return nil, err
 	}
 
-	reqUrl, _ := url.Parse(admissionReq.Request.URL)
-	reqToken := reqUrl.Query().Get("token")
-	if strings.TrimSpace(reqToken) == "" {
-		return nil, ErrTokenMissing
-	}
-
 	return &OMEAdmissionResponse{
-		Allowed: tA.checkToken(reqToken, &admissionReq),
+		Allowed: tA.canAccess(&admissionReq),
 	}, nil
 }
 
-func (tA *TokenAdmission) checkToken(reqToken string, request *OMEAdmissionBody) bool {
+func (tA *TokenAdmission) canAccess(request *OMEAdmissionBody) bool {
+	reqAppName, reqStreamName, reqToken := parseStreamFromURL(request.Request.URL)
+	streamInfo, err := tA.streamRepo.FindByName(reqStreamName, reqAppName)
+
+	if err != nil {
+		return false
+	}
+
+	if streamInfo.Public {
+		return true
+	}
+
 	tokenData, err := tA.tokenRepo.FindByToken(reqToken)
 	if err != nil {
 		return false
@@ -72,10 +75,6 @@ func (tA *TokenAdmission) checkToken(reqToken string, request *OMEAdmissionBody)
 		return false
 	}
 
-	url, _ := url.Parse(request.Request.URL)
-	pathElements := strings.Split(url.Path, "/")
-	reqAppName := pathElements[0]
-	reqStreamName := pathElements[1]
 	if tokenData.Stream != reqStreamName || tokenData.Application != reqAppName {
 		return false
 	}
