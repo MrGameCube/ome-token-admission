@@ -6,7 +6,9 @@ import (
 	"errors"
 	"github.com/MrGameCube/ome-token-admission/token-admission/internal/stream"
 	"github.com/MrGameCube/ome-token-admission/token-admission/internal/token"
+	"github.com/MrGameCube/ome-token-admission/token-admission/ta-models"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -25,12 +27,20 @@ type TokenAdmission struct {
 }
 
 // New creates a new TokenAdmission object and initializes the needed SQLite Repositories
-func New(db *sql.DB) *TokenAdmission {
+func New(db *sql.DB) (*TokenAdmission, error) {
+	tokenRepo, err := token.NewSQLiteRepository(db)
+	if err != nil {
+		return nil, err
+	}
+	streamRepo, err := stream.NewSQLiteRepository(db)
+	if err != nil {
+		return nil, err
+	}
 	return &TokenAdmission{
 		db:         db,
-		tokenRepo:  token.NewSQLiteRepository(db),
-		streamRepo: stream.NewSQLiteRepository(db),
-	}
+		tokenRepo:  tokenRepo,
+		streamRepo: streamRepo,
+	}, nil
 }
 
 func (tA *TokenAdmission) HandleAdmissionRequest(request *http.Request) (*OMEAdmissionResponse, error) {
@@ -61,6 +71,7 @@ func (tA *TokenAdmission) canAccess(request *OMEAdmissionBody) bool {
 	streamInfo, err := tA.streamRepo.FindByName(reqStreamName, reqAppName)
 
 	if err != nil {
+		log.Println("canAccess:", err)
 		return false
 	}
 
@@ -70,6 +81,7 @@ func (tA *TokenAdmission) canAccess(request *OMEAdmissionBody) bool {
 
 	tokenData, err := tA.tokenRepo.FindByToken(reqToken)
 	if err != nil {
+		log.Println("canAccess:", err)
 		return false
 	}
 
@@ -84,16 +96,16 @@ func (tA *TokenAdmission) canAccess(request *OMEAdmissionBody) bool {
 	return true
 }
 
-func (tA *TokenAdmission) CreateStream(options *StreamRequest) (*StreamResponse, error) {
+func (tA *TokenAdmission) CreateStream(options *ta_models.StreamRequest) (*ta_models.StreamResponse, error) {
 	entity, err := tA.streamRepo.Create(options.StreamOptions)
 	if err != nil {
 		return nil, err
 	}
-	var streamResp = StreamResponse{}
+	var streamResp = ta_models.StreamResponse{}
 	streamResp.Entity = entity
 	if options.CreateTokens {
-		watchToken, err := tA.CreateToken(&TokenOptions{
-			Direction:   DirectionIncoming,
+		watchToken, err := tA.CreateToken(&ta_models.TokenOptions{
+			Direction:   ta_models.DirectionOutgoing,
 			Stream:      entity.StreamName,
 			Application: entity.ApplicationName,
 			ExpiresAt:   options.ExpireAt,
@@ -101,8 +113,8 @@ func (tA *TokenAdmission) CreateStream(options *StreamRequest) (*StreamResponse,
 		if err != nil {
 			return &streamResp, ErrCantCreateToken
 		}
-		streamToken, err := tA.CreateToken(&TokenOptions{
-			Direction:   DirectionOutgoing,
+		streamToken, err := tA.CreateToken(&ta_models.TokenOptions{
+			Direction:   ta_models.DirectionIncoming,
 			Stream:      entity.StreamName,
 			Application: entity.ApplicationName,
 			ExpiresAt:   options.ExpireAt,
@@ -116,12 +128,12 @@ func (tA *TokenAdmission) CreateStream(options *StreamRequest) (*StreamResponse,
 	return &streamResp, nil
 }
 
-func (tA *TokenAdmission) CreateToken(options *TokenOptions) (*TokenEntity, error) {
+func (tA *TokenAdmission) CreateToken(options *ta_models.TokenOptions) (*ta_models.TokenEntity, error) {
 	genToken, err := generateToken()
 	if err != nil {
 		return nil, err
 	}
-	tokenEntity, err := tA.tokenRepo.Create(TokenEntity{
+	tokenEntity, err := tA.tokenRepo.Create(ta_models.TokenEntity{
 		Token:       genToken,
 		Direction:   options.Direction,
 		Stream:      options.Stream,

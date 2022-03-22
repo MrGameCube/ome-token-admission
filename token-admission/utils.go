@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const TOKEN_BYTE_LENGTH = 32
+const TOKEN_BYTE_LENGTH = 16
 
 // ValidateHMACRequest conforms to the OMV: https://airensoft.gitbook.io/ovenmediaengine/access-control/admission-webhooks#security
 func ValidateHMACRequest(req *http.Request, bodyBytes []byte) bool {
@@ -34,7 +34,10 @@ func parseStreamFromURL(reqURL string) (appName string, streamName string, token
 		return "", "", ""
 	}
 	pathElements := strings.Split(parsedURL.Path, "/")
-	return pathElements[0], pathElements[1], parsedURL.Query().Get("token")
+	if len(pathElements) < 3 {
+		return "", "", parsedURL.Query().Get("token")
+	}
+	return pathElements[1], pathElements[2], parsedURL.Query().Get("token")
 }
 
 func generateToken() (string, error) {

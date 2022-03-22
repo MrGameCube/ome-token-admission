@@ -1,4 +1,4 @@
-package token_admission
+package ta_models
 
 import "time"
 

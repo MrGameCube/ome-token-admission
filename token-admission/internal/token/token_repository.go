@@ -3,7 +3,7 @@ package token
 import (
 	"database/sql"
 	"errors"
-	"github.com/MrGameCube/ome-token-admission/token-admission"
+	"github.com/MrGameCube/ome-token-admission/token-admission/ta-models"
 	"time"
 )
 
@@ -15,8 +15,10 @@ type SQLiteRepository struct {
 	db *sql.DB
 }
 
-func NewSQLiteRepository(db *sql.DB) *SQLiteRepository {
-	return &SQLiteRepository{db: db}
+func NewSQLiteRepository(db *sql.DB) (*SQLiteRepository, error) {
+	repo := SQLiteRepository{db: db}
+	err := repo.Migrate()
+	return &repo, err
 }
 
 func (r *SQLiteRepository) Migrate() error {
@@ -34,9 +36,9 @@ func (r *SQLiteRepository) Migrate() error {
 	return err
 }
 
-func (r *SQLiteRepository) Create(token token_admission.TokenEntity) (*token_admission.TokenEntity, error) {
+func (r *SQLiteRepository) Create(token ta_models.TokenEntity) (*ta_models.TokenEntity, error) {
 	query := `INSERT INTO tokens (token, app_name, stream_name, direction, expires_at) VALUES(?,?,?,?,?)`
-	res, err := r.db.Exec(query, token.Token, token.Application, token.Stream, token.Direction, token.ExpiresAt)
+	res, err := r.db.Exec(query, token.Token, token.Application, token.Stream, token.Direction, token.ExpiresAt.Format(time.RFC3339))
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +50,15 @@ func (r *SQLiteRepository) Create(token token_admission.TokenEntity) (*token_adm
 	return &token, nil
 }
 
-func (r *SQLiteRepository) All() ([]token_admission.TokenEntity, error) {
+func (r *SQLiteRepository) All() ([]ta_models.TokenEntity, error) {
 	res, err := r.db.Query("SELECT * FROM tokens WHERE expired_at < datetime()")
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close()
-	var all []token_admission.TokenEntity
+	var all []ta_models.TokenEntity
 	for res.Next() {
-		var token token_admission.TokenEntity
+		var token ta_models.TokenEntity
 		var dbDate string
 		if err := res.Scan(&token.ID,
 			&token.Token,
@@ -76,8 +78,8 @@ func (r *SQLiteRepository) All() ([]token_admission.TokenEntity, error) {
 	}
 	return all, nil
 }
-func (r *SQLiteRepository) FindByToken(token string) (*token_admission.TokenEntity, error) {
-	res, err := r.db.Query("SELECT * FROM tokens WHERE token=? and expires_at < datetime()", token)
+func (r *SQLiteRepository) FindByToken(token string) (*ta_models.TokenEntity, error) {
+	res, err := r.db.Query("SELECT * FROM tokens WHERE token=? and datetime() < expires_at", token)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +88,7 @@ func (r *SQLiteRepository) FindByToken(token string) (*token_admission.TokenEnti
 		return nil, ErrNotFound
 	}
 
-	var tokenEnt *token_admission.TokenEntity
+	var tokenEnt ta_models.TokenEntity
 	var dbISODate string
 	err = res.Scan(&tokenEnt.ID, &tokenEnt.Token, &tokenEnt.Application, &tokenEnt.Stream, &tokenEnt.Direction, &dbISODate)
 	if err != nil {
@@ -98,7 +100,7 @@ func (r *SQLiteRepository) FindByToken(token string) (*token_admission.TokenEnti
 		return nil, err
 	}
 
-	return tokenEnt, nil
+	return &tokenEnt, nil
 
 }
 func (r *SQLiteRepository) Delete(id int64) error {

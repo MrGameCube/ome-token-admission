@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	token_admission "github.com/MrGameCube/ome-token-admission/token-admission"
+	"github.com/MrGameCube/ome-token-admission/token-admission/ta-models"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +19,31 @@ import (
 var tokenAdmission *token_admission.TokenAdmission
 
 func main() {
-	tokenAdmission = token_admission.New(nil)
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tokenAdmission, err = token_admission.New(db)
+	if err != nil {
+		log.Fatal("tokenAdm: ", err)
+	}
+	resp, err := tokenAdmission.CreateStream(&ta_models.StreamRequest{
+		StreamOptions: ta_models.StreamEntity{
+			Title:           "Test",
+			StreamName:      "testStream",
+			ApplicationName: "app",
+			CreationDate:    time.Time{},
+			OwnerName:       "Matteo",
+			OwnerID:         "",
+			Public:          false,
+		},
+		ExpireAt:     time.Date(2023, 12, 10, 0, 0, 0, 0, time.UTC),
+		CreateTokens: true,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Watch: ", resp.WatchToken, " Stream: ", resp.StreamToken)
 	router := initializeGin()
 	server := initializeHTTPServer(router)
 	waitForShutdown(server)
