@@ -15,12 +15,12 @@ type StreamEntity struct {
 
 type StreamRequest struct {
 	StreamOptions StreamEntity
-	Expires       int
+	ExpireAt      time.Time
 	CreateTokens  bool
 }
 
 type StreamResponse struct {
-	Success     bool
+	Entity      *StreamEntity
 	StreamToken string
 	WatchToken  string
 }

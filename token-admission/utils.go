@@ -2,6 +2,7 @@ package token_admission
 
 import (
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
 	"log"
@@ -9,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 )
+
+const TOKEN_BYTE_LENGTH = 32
 
 // ValidateHMACRequest conforms to the OMV: https://airensoft.gitbook.io/ovenmediaengine/access-control/admission-webhooks#security
 func ValidateHMACRequest(req *http.Request, bodyBytes []byte) bool {
@@ -32,4 +35,13 @@ func parseStreamFromURL(reqURL string) (appName string, streamName string, token
 	}
 	pathElements := strings.Split(parsedURL.Path, "/")
 	return pathElements[0], pathElements[1], parsedURL.Query().Get("token")
+}
+
+func generateToken() (string, error) {
+	tokenBytes := make([]byte, TOKEN_BYTE_LENGTH)
+	_, err := rand.Read(tokenBytes)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(tokenBytes), nil
 }

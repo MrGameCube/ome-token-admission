@@ -13,6 +13,7 @@ import (
 var (
 	ErrInvalidSignature = errors.New("hmac signature invalid")
 	ErrTokenMissing     = errors.New("token missing")
+	ErrCantCreateToken  = errors.New("token creation failed")
 )
 
 // TokenAdmission contains the logic to admit OME stream requests based on tokens
@@ -49,6 +50,7 @@ func (tA *TokenAdmission) HandleAdmissionRequest(request *http.Request) (*OMEAdm
 		return nil, err
 	}
 
+	// TODO: use expiry information?
 	return &OMEAdmissionResponse{
 		Allowed: tA.canAccess(&admissionReq),
 	}, nil
@@ -80,4 +82,51 @@ func (tA *TokenAdmission) canAccess(request *OMEAdmissionBody) bool {
 	}
 
 	return true
+}
+
+func (tA *TokenAdmission) CreateStream(options *StreamRequest) (*StreamResponse, error) {
+	entity, err := tA.streamRepo.Create(options.StreamOptions)
+	if err != nil {
+		return nil, err
+	}
+	var streamResp = StreamResponse{}
+	streamResp.Entity = entity
+	if options.CreateTokens {
+		watchToken, err := tA.CreateToken(&TokenOptions{
+			Direction:   DirectionIncoming,
+			Stream:      entity.StreamName,
+			Application: entity.ApplicationName,
+			ExpiresAt:   options.ExpireAt,
+		})
+		if err != nil {
+			return &streamResp, ErrCantCreateToken
+		}
+		streamToken, err := tA.CreateToken(&TokenOptions{
+			Direction:   DirectionOutgoing,
+			Stream:      entity.StreamName,
+			Application: entity.ApplicationName,
+			ExpiresAt:   options.ExpireAt,
+		})
+		if err != nil {
+			return &streamResp, ErrCantCreateToken
+		}
+		streamResp.StreamToken = streamToken.Token
+		streamResp.WatchToken = watchToken.Token
+	}
+	return &streamResp, nil
+}
+
+func (tA *TokenAdmission) CreateToken(options *TokenOptions) (*TokenEntity, error) {
+	genToken, err := generateToken()
+	if err != nil {
+		return nil, err
+	}
+	tokenEntity, err := tA.tokenRepo.Create(TokenEntity{
+		Token:       genToken,
+		Direction:   options.Direction,
+		Stream:      options.Stream,
+		Application: options.Application,
+		ExpiresAt:   options.ExpiresAt,
+	})
+	return tokenEntity, err
 }

@@ -24,3 +24,10 @@ type TokenEntity struct {
 	Application string
 	ExpiresAt   time.Time
 }
+
+type TokenOptions struct {
+	Direction   string
+	Stream      string
+	Application string
+	ExpiresAt   time.Time
+}
