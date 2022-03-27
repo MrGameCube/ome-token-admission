@@ -10,12 +10,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var (
 	ErrInvalidSignature = errors.New("hmac signature invalid")
 	ErrTokenMissing     = errors.New("token missing")
 	ErrCantCreateToken  = errors.New("token creation failed")
+	ErrInvalidRequest   = errors.New("invalid request")
 )
 
 // TokenAdmission contains the logic to admit OME stream requests based on tokens
@@ -50,7 +52,7 @@ func (tA *TokenAdmission) HandleAdmissionRequest(request *http.Request) (*OMEAdm
 		return nil, err
 	}
 
-	if !ValidateHMACRequest(request, bodyBytes) {
+	if !ValidateHMACRequest(request, bodyBytes, []byte("1234")) {
 		return nil, ErrInvalidSignature
 	}
 
@@ -97,6 +99,10 @@ func (tA *TokenAdmission) canAccess(request *OMEAdmissionBody) bool {
 }
 
 func (tA *TokenAdmission) CreateStream(options *ta_models.StreamRequest) (*ta_models.StreamResponse, error) {
+	if !validateStreamRequest(options) {
+		return nil, ErrInvalidRequest
+	}
+
 	entity, err := tA.streamRepo.Create(options.StreamOptions)
 	if err != nil {
 		return nil, err
@@ -141,4 +147,18 @@ func (tA *TokenAdmission) CreateToken(options *ta_models.TokenOptions) (*ta_mode
 		ExpiresAt:   options.ExpiresAt,
 	})
 	return tokenEntity, err
+}
+
+func validateStreamRequest(options *ta_models.StreamRequest) bool {
+	if options.StreamOptions == nil {
+		return false
+	}
+
+	if strings.TrimSpace(options.StreamOptions.OwnerName) == "" ||
+		strings.TrimSpace(options.StreamOptions.StreamName) == "" ||
+		strings.TrimSpace(options.StreamOptions.ApplicationName) == "" {
+		return false
+	}
+
+	return true
 }

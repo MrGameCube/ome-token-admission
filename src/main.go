@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	token_admission "github.com/MrGameCube/ome-token-admission/token-admission"
-	"github.com/MrGameCube/ome-token-admission/token-admission/ta-models"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
@@ -27,23 +27,6 @@ func main() {
 	if err != nil {
 		log.Fatal("tokenAdm: ", err)
 	}
-	resp, err := tokenAdmission.CreateStream(&ta_models.StreamRequest{
-		StreamOptions: ta_models.StreamEntity{
-			Title:           "Test",
-			StreamName:      "testStream",
-			ApplicationName: "app",
-			CreationDate:    time.Time{},
-			OwnerName:       "Matteo",
-			OwnerID:         "",
-			Public:          false,
-		},
-		ExpireAt:     time.Date(2023, 12, 10, 0, 0, 0, 0, time.UTC),
-		CreateTokens: true,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Watch: ", resp.WatchToken, " Stream: ", resp.StreamToken)
 	router := initializeGin()
 	server := initializeHTTPServer(router)
 	waitForShutdown(server)
@@ -53,6 +36,7 @@ func main() {
 
 func initializeGin() *gin.Engine {
 	router := gin.Default()
+	router.Use(cors.Default())
 	router.LoadHTMLFiles("web/public/index.html")
 	router.Static("/static", "./web/public/static")
 	registerControllers(router)

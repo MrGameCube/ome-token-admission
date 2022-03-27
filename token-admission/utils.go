@@ -14,15 +14,14 @@ import (
 const TOKEN_BYTE_LENGTH = 16
 
 // ValidateHMACRequest conforms to the OMV: https://airensoft.gitbook.io/ovenmediaengine/access-control/admission-webhooks#security
-func ValidateHMACRequest(req *http.Request, bodyBytes []byte) bool {
+func ValidateHMACRequest(req *http.Request, bodyBytes []byte, key []byte) bool {
 
 	hmacData, err := base64.RawURLEncoding.DecodeString(req.Header.Get("X-OME-Signature"))
 	if err != nil {
 		log.Println(err)
 		return false
 	}
-	// TODO: make key configurable
-	bodyHmac := hmac.New(sha1.New, []byte("1234"))
+	bodyHmac := hmac.New(sha1.New, key)
 	bodyHmac.Write(bodyBytes)
 	newHmac := bodyHmac.Sum(nil)
 	return hmac.Equal(hmacData, newHmac)

@@ -34,9 +34,18 @@ func (r *SQLiteRepository) Migrate() error {
 	_, err := r.db.Exec(query)
 	return err
 }
-func (r *SQLiteRepository) Create(stream ta_models.StreamEntity) (*ta_models.StreamEntity, error) {
+func (r *SQLiteRepository) Create(streamParams *ta_models.StreamParameters) (*ta_models.StreamEntity, error) {
+	stream := ta_models.StreamEntity{
+		Title:           streamParams.Title,
+		StreamName:      streamParams.StreamName,
+		ApplicationName: streamParams.ApplicationName,
+		CreationDate:    time.Now(),
+		OwnerName:       streamParams.OwnerName,
+		OwnerID:         streamParams.OwnerID,
+		Public:          streamParams.Public,
+	}
 	query := `INSERT INTO streams (name, app_name, owner_name, owner_id, public, creation_date) VALUES(?,?,?,?,?,?)`
-	res, err := r.db.Exec(query, stream.StreamName, stream.ApplicationName, stream.OwnerName, stream.OwnerID, stream.Public, stream.CreationDate.Format(time.RFC3339))
+	res, err := r.db.Exec(query, streamParams.StreamName, streamParams.ApplicationName, streamParams.OwnerName, streamParams.OwnerID, streamParams.Public, stream.CreationDate.Format(time.RFC3339))
 	if err != nil {
 		return nil, err
 	}
