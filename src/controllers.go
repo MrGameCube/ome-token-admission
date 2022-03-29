@@ -58,10 +58,12 @@ func handleCreateStream(context *gin.Context) {
 
 	streamResponse, err := createStreamFromBody(&bodyData)
 	if err == token_admission.ErrInvalidRequest {
+		classLogger.Println(err)
 		context.Status(http.StatusBadRequest)
 		return
 	}
 	if err != nil {
+		classLogger.Println(err)
 		context.Status(http.StatusInternalServerError)
 		return
 	}
