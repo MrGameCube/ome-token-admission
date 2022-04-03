@@ -8,17 +8,33 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/ini.v1"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
+type Config struct {
+	OmeURL          url.URL
+	WebRTCPort      uint
+	RTMPPort        uint
+	HLSPort         uint
+	OMESharedSecret string
+}
+
 var tokenAdmission *token_admission.TokenAdmission
+var config Config
 
 func main() {
+	config, err := ini.Load("config.ini")
+	if err != nil {
+		log.Fatal(config)
+	}
+	loadConfig(config)
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		log.Fatal(err)
@@ -32,6 +48,18 @@ func main() {
 	waitForShutdown(server)
 
 	log.Println("Server stopped!")
+}
+
+func loadConfig(configFile *ini.File) {
+	parsedUrl, err := url.Parse(configFile.Section("").Key("ome_url").MustString("http://localhost"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.OmeURL = *parsedUrl
+	config.WebRTCPort = configFile.Section("Ports").Key("webrtc").MustUint(3333)
+	config.HLSPort = configFile.Section("Ports").Key("hls").MustUint(80)
+	config.RTMPPort = configFile.Section("Ports").Key("rtmp").MustUint(1935)
+	config.OMESharedSecret = configFile.Section("Security").Key("ome_shared_secret").String()
 }
 
 func initializeGin() *gin.Engine {
