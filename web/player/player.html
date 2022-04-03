@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Player</title>
+    <meta charset="utf-8"/>
+    <script src="https://cdn.jsdelivr.net/npm/dashjs@latest/dist/dash.all.debug.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ovenplayer/dist/ovenplayer.js"></script>
+    <script>
+        const targetStream = {{.targetStream}};
+    </script>
+</head>
+<body>
+<div id="player_el_id"></div>
+<script defer>
+    // Initialize OvenPlayer
+    const player = OvenPlayer.create("player_el_id", {
+        "autoStart": true,
+        "autoFallback": false,
+        "mute": false,
+        "sources": [{
+            "type": "webrtc",
+            "file": `${targetStream.webRTCURL}?transport=tcp`
+        }, {
+            "type": "webrtc",
+            "file": targetStream.webRTCURL
+        },
+        ]
+    });
+</script>
+</body>
+</html>

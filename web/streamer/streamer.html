@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Streamer</title>
+    <meta charset="utf-8"/>
+    <script src="https://cdn.jsdelivr.net/npm/ovenlivekit@latest/dist/OvenLiveKit.min.js"></script>
+    <script>
+        const targetStream = {{.targetStream}};
+        function startStream() {
+            let ovenLivekit = OvenLiveKit.create();
+            ovenLivekit.getDisplayMedia(
+            ).then(() => {
+
+                // Got device stream and start streaming to OvenMediaEngine
+                //ovenLivekit.startStreaming('ws://23.88.26.90:3333/app/stream?direction=send');
+                //ws://localhost:3333/app/3?direction=send&token=
+                ovenLivekit.startStreaming(`${targetStream.webRTCSendURL}`);
+            });
+        }
+
+    </script>
+</head>
+<button onclick="startStream()">STREAM</button>
+</html>

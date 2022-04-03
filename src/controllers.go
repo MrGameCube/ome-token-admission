@@ -5,18 +5,23 @@ import (
 	"github.com/MrGameCube/ome-token-admission/token-admission"
 	ta_models "github.com/MrGameCube/ome-token-admission/token-admission/ta-models"
 	"github.com/gin-gonic/gin"
+	"html"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var classLogger = log.New(os.Stdout, "Controllers", log.Ldate|log.Lshortfile|log.Ltime)
 
 func registerControllers(router *gin.Engine) {
 	classLogger.Println("Registering Controllers")
+	router.LoadHTMLGlob("web/**/*.html")
 	router.POST("/api/v1/admission", handleAdmission)
 	router.POST("/api/v1/stream", handleCreateStream)
+	router.GET("/play/:token", handlePlayStream)
+	router.GET("/stream/:token", handleStartStream)
 }
 
 func handleAdmission(context *gin.Context) {
@@ -80,4 +85,22 @@ func createStreamFromBody(bodyData *[]byte) (*ta_models.StreamResponse, error) {
 	}
 
 	return tokenAdmission.CreateStream(&streamReq)
+}
+
+func handlePlayStream(context *gin.Context) {
+	token := html.EscapeString(context.Param("token"))
+
+	if strings.TrimSpace(token) == "" {
+		context.Status(http.StatusNotFound)
+		return
+	}
+	context.HTML(http.StatusOK, "player.html", gin.H{
+		"targetStream": gin.H{
+			"webRTCURL": "ws://localhost:3333/app/3?token=" + token,
+		},
+	})
+}
+
+func handleStartStream(context *gin.Context) {
+
 }
