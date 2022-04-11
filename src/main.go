@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	token_admission "github.com/MrGameCube/ome-token-admission/token-admission"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,11 +20,14 @@ import (
 )
 
 type Config struct {
-	OmeURL          url.URL
+	OmeURL          string
+	BaseURL         url.URL
 	WebRTCPort      uint
 	RTMPPort        uint
 	HLSPort         uint
+	WebPort         uint
 	OMESharedSecret string
+	UseHTTPS        bool
 }
 
 var tokenAdmission *token_admission.TokenAdmission
@@ -51,15 +55,18 @@ func main() {
 }
 
 func loadConfig(configFile *ini.File) {
-	parsedUrl, err := url.Parse(configFile.Section("").Key("ome_url").MustString("http://localhost"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	config.OmeURL = *parsedUrl
+	config.OmeURL = configFile.Section("").Key("ome_host").MustString("http://localhost")
 	config.WebRTCPort = configFile.Section("Ports").Key("webrtc").MustUint(3333)
 	config.HLSPort = configFile.Section("Ports").Key("hls").MustUint(80)
 	config.RTMPPort = configFile.Section("Ports").Key("rtmp").MustUint(1935)
 	config.OMESharedSecret = configFile.Section("Security").Key("ome_shared_secret").String()
+	config.UseHTTPS = configFile.Section("Security").Key("use_https").MustBool(false)
+	config.WebPort = configFile.Section("Ports").Key("web").MustUint(8083)
+	parsedURL, err := url.Parse(configFile.Section("").Key("base_url").MustString(fmt.Sprintf("http://localhost:%d", config.WebPort)))
+	if err != nil {
+		return
+	}
+	config.BaseURL = *parsedURL
 }
 
 func initializeGin() *gin.Engine {

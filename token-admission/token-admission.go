@@ -45,14 +45,14 @@ func New(db *sql.DB) (*TokenAdmission, error) {
 	}, nil
 }
 
-func (tA *TokenAdmission) HandleAdmissionRequest(request *http.Request) (*OMEAdmissionResponse, error) {
+func (tA *TokenAdmission) HandleAdmissionRequest(request *http.Request, sharedSecret []byte) (*OMEAdmissionResponse, error) {
 
 	bodyBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	if !ValidateHMACRequest(request, bodyBytes, []byte("1234")) {
+	if !ValidateHMACRequest(request, bodyBytes, sharedSecret) {
 		return nil, ErrInvalidSignature
 	}
 
@@ -147,6 +147,12 @@ func (tA *TokenAdmission) CreateToken(options *ta_models.TokenOptions) (*ta_mode
 		ExpiresAt:   options.ExpiresAt,
 	})
 	return tokenEntity, err
+}
+func (tA *TokenAdmission) GetTokenInfo(token string) (*ta_models.TokenEntity, error) {
+	return tA.tokenRepo.FindByToken(token)
+}
+func (tA *TokenAdmission) GetStreamInfo(app string, stream string) (*ta_models.StreamEntity, error) {
+	return tA.streamRepo.FindByName(stream, app)
 }
 
 func validateStreamRequest(options *ta_models.StreamRequest) bool {

@@ -1,6 +1,8 @@
 package ta_models
 
-import "time"
+import (
+	"time"
+)
 
 type StreamEntity struct {
 	ID              int64     `json:"id,omitempty"`
