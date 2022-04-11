@@ -1,0 +1,3 @@
+*.db
+config.ini
+/.idea/dataSources.xml
