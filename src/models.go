@@ -6,7 +6,7 @@ import (
 
 type StreamResponseWrapper struct {
 	Response  *ta_models.StreamResponse `json:"response"`
-	StreamURL string                    `json:"stream_url,string,omitempty"`
-	WatchURL  string                    `json:"watch_url,string,omitempty"`
-	RTMPURL   string                    `json:"rtmp_url,string,omitempty"`
+	StreamURL string                    `json:"stream_url,omitempty"`
+	WatchURL  string                    `json:"watch_url,omitempty"`
+	RTMPURL   string                    `json:"rtmp_url,omitempty"`
 }
