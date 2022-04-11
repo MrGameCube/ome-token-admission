@@ -9,8 +9,33 @@
     <script>
         const targetStream = {{.targetStream}};
     </script>
+    <style>
+        body,html {
+            font-family: sans-serif;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #0f0f0f;
+            color: white;
+        }
+        #player_el_id {
+            max-width: 80vw;
+            max-height: 80vw;
+        }
+        h1 {
+            width: 100%;
+            padding-left: 5em;
+        }
+    </style>
 </head>
 <body>
+<h1 id="title"></h1>
 <div id="player_el_id"></div>
 <script defer>
     // Initialize OvenPlayer
@@ -27,6 +52,7 @@
         },
         ]
     });
+    document.getElementById("title").textContent = targetStream.title;
 </script>
 </body>
 </html>
