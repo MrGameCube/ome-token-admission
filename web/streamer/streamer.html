@@ -6,19 +6,33 @@
     <script src="https://cdn.jsdelivr.net/npm/ovenlivekit@latest/dist/OvenLiveKit.min.js"></script>
     <script>
         const targetStream = {{.targetStream}};
+        let ovenLivekit;
         function startStream() {
-            let ovenLivekit = OvenLiveKit.create();
+            if(ovenLivekit) {
+                ovenLivekit.remove();
+            }
+            ovenLivekit = OvenLiveKit.create();
+            ovenLivekit.attachMedia(document.getElementById("playback"));
             ovenLivekit.getDisplayMedia(
+                {
+                    audio: false,
+                    video: {width: {max: 1920}, height: {max:1080}}
+                }
             ).then(() => {
 
                 // Got device stream and start streaming to OvenMediaEngine
-                //ovenLivekit.startStreaming('ws://23.88.26.90:3333/app/stream?direction=send');
-                //ws://localhost:3333/app/3?direction=send&token=
                 ovenLivekit.startStreaming(`${targetStream.webRTCSendURL}`);
             });
         }
 
     </script>
+    <style>
+        #playback {
+            max-width: 40vw;
+            max-height: 50vh;
+        }
+    </style>
 </head>
 <button onclick="startStream()">STREAM</button>
+<video id="playback"></video>
 </html>

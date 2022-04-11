@@ -42,7 +42,6 @@ func handleAdmission(context *gin.Context) {
 		context.Status(http.StatusInternalServerError)
 		return
 	}
-
 	context.JSON(http.StatusOK, resp)
 }
 
