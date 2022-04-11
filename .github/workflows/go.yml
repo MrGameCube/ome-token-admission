@@ -25,7 +25,7 @@ jobs:
       with:
           name: artifact
           path: |
-            ome-token-admission.tar.gz
+            ome-token-admission
             config.sample.ini
             web/
       
