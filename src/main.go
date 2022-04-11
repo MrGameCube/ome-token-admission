@@ -39,7 +39,7 @@ func main() {
 		log.Fatal(config)
 	}
 	loadConfig(config)
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite3", "tokens.db")
 	if err != nil {
 		log.Fatal(err)
 	}
