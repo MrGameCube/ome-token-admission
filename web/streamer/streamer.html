@@ -7,7 +7,7 @@
     <script>
         const targetStream = {{.targetStream}};
         let ovenLivekit;
-        function startStream() {
+        function startStream(useTCP) {
             if(ovenLivekit) {
                 ovenLivekit.remove();
             }
@@ -21,7 +21,8 @@
             ).then(() => {
 
                 // Got device stream and start streaming to OvenMediaEngine
-                ovenLivekit.startStreaming(`${targetStream.webRTCSendURL}`);
+                const url = useTCP ?`${targetStream.webRTCSendURL}?protocol=tcp` : targetStream.webRTCSendURL;
+                ovenLivekit.startStreaming(url);
             });
         }
 
@@ -34,5 +35,6 @@
     </style>
 </head>
 <button onclick="startStream()">STREAM</button>
+<button onclick="startStream(true)">STREAM (use TCP)</button>
 <video id="playback"></video>
 </html>
